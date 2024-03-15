@@ -31,32 +31,21 @@ if lines is not None:
     angle_to_rotate = max_angle if max_angle < 45 else 90 - max_angle
 
     # 获取旋转矩阵
-    center = (image.shape[1] / 2, image.shape[0] / 2)
+    center = (binary.shape[1] / 2, binary.shape[0] / 2)
     matrix = cv2.getRotationMatrix2D(center, angle_to_rotate, 1)
 
     # 进行图像倾斜校正
-    corrected_image = cv2.warpAffine(image, matrix, (image.shape[1], image.shape[0]))
+    corrected_image = cv2.warpAffine(binary, matrix, (binary.shape[1], binary.shape[0]))
 
-    # # 显示校正后的图像
-    # cv2.imshow('Corrected Image', corrected_image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-# # 找到答题卡区域的边界
-# contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-# # 遍历轮廓并裁剪图像
-# for contour in contours:
-#     x, y, w, h = cv2.boundingRect(contour)
-#     cv2.imwrite(f'answer_sheet_{x}_{y}.png', image[y:y+h, x:x+w])
 # 使用Tesseract进行OCR
-text = pytesseract.image_to_string(corrected_image, config='--oem 3 --psm 6')
+text = pytesseract.image_to_string(binary, config='--oem 3 --psm 6',lang='ans')
 # 转义非法字符
 text = text.encode('gbk', 'ignore').decode('gbk')
 print(text)
 # 创建一个副本图像，用于绘制边界框
-image_with_text = np.copy(corrected_image)
+image_with_text = np.copy(binary)
 # 获取文本的边界框
-boxes = pytesseract.image_to_data(corrected_image, output_type=pytesseract.Output.DICT)
+boxes = pytesseract.image_to_data(binary, output_type=pytesseract.Output.DICT)
 # 遍历每个字符和其边界框
 for i in range(len(boxes['level'])):
     if int(boxes['level'][i]) == 1:
