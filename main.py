@@ -15,7 +15,6 @@ gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 denoised = cv2.GaussianBlur(gray, (5, 5), 0)
 # 二值化
 _, binary = cv2.threshold(denoised, 128, 255, cv2.THRESH_BINARY_INV)
-
 # 检测图像中的文本区域
 edges = cv2.Canny(binary, 50, 150, apertureSize=3)
 
@@ -38,10 +37,10 @@ if lines is not None:
     # 进行图像倾斜校正
     corrected_image = cv2.warpAffine(image, matrix, (image.shape[1], image.shape[0]))
 
-    # 显示校正后的图像
-    cv2.imshow('Corrected Image', corrected_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # # 显示校正后的图像
+    # cv2.imshow('Corrected Image', corrected_image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 # # 找到答题卡区域的边界
 # contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -50,7 +49,10 @@ if lines is not None:
 #     x, y, w, h = cv2.boundingRect(contour)
 #     cv2.imwrite(f'answer_sheet_{x}_{y}.png', image[y:y+h, x:x+w])
 # 使用Tesseract进行OCR
-text = pytesseract.image_to_string(corrected_image, config='--psm 10')
+text = pytesseract.image_to_string(corrected_image, config='--oem 3 --psm 6')
+# 转义非法字符
+text = text.encode('gbk', 'ignore').decode('gbk')
+print(text)
 # 创建一个副本图像，用于绘制边界框
 image_with_text = np.copy(corrected_image)
 # 获取文本的边界框
@@ -62,7 +64,10 @@ for i in range(len(boxes['level'])):
         (x, y, w, h) = (boxes['left'][i], boxes['top'][i], boxes['width'][i], boxes['height'][i])
         # 在副本图像上绘制边界框
         cv2.rectangle(image_with_text, (x, y), (x + w, y + h), (0, 255, 0), 2)
+# 调整图像尺寸以适应显示窗口
+image_resized = cv2.resize(image_with_text, (600, 400))  # 调整图像宽度为800像素，高度为600像素
+
 # 显示图像
-cv2.imshow('Image with text boxes', image_with_text)
+cv2.imshow('Image with text boxes', image_resized)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
